@@ -12,7 +12,6 @@ extern char               C[4];
 extern char               D[4];
 extern char               E[4];
 extern char               F[4];
-extern const rx_message_t message[7];
 
 int initHC06(uint8_t rx_pin, uint8_t tx_pin, uint32_t baudrate)
 {
@@ -29,7 +28,7 @@ int initHC06(uint8_t rx_pin, uint8_t tx_pin, uint32_t baudrate)
 int readHC06Msg(void)
 {
     static char buffer[32], *data = NULL;
-    static int  len = 0, cr = false, state = RX_HEADER, type = MSG_NONE, ii = 0;
+    static int  len = 0, cr = false, state = RX_HEADER, ii = 0;
     char        c;
 
     if (BT.available()) {
@@ -38,12 +37,15 @@ int readHC06Msg(void)
         case RX_HEADER:
             /* get header CR*/
             c = BT.read();
+#if READ_DEBUG
+            Serial.print(c);
+#endif
             if (c == '\r') {
                 cr    = true;
-                state = RX_CONTENT;
             } else if (c == '\n') {
                 if (cr) {
                     cr = false;
+                    state = RX_CONTENT;
                 } else {
                     /* error */
                     state = RX_ERROR;
@@ -53,14 +55,14 @@ int readHC06Msg(void)
         case RX_CONTENT:
             /* get content */
             buffer[len] = BT.read();
+#if READ_DEBUG
+            Serial.print(buffer[len]);
+#endif
             if (buffer[len] == '\r') {
-                type        = MSG_NONE;
                 cr          = true;
                 buffer[len] = '\0';
                 state       = RX_FOOTER;
-            } else if (buffer[len] == ':') {
-                type        = MSG_COLON;
-                buffer[len] = '\0';
+            } else {
                 for (ii = 0; message[ii].command != NULL; ii++) {
                     if (message[ii].type != MSG_NONE) {
                         if (strcmp(message[ii].command, buffer) == 0) {
@@ -78,13 +80,13 @@ int readHC06Msg(void)
                     state = RX_ERROR;
                 }
                 len = 0;
-            } else {
-                // normal character
-                len++;
             }
             break;
         case RX_DATA:
             data[len] = BT.read();
+#if READ_DEBUG
+            Serial.print(data[len]);
+#endif
             if (data[len] == '\r') {
                 cr        = true;
                 data[len] = '\0';
@@ -97,6 +99,9 @@ int readHC06Msg(void)
         case RX_FOOTER:
             /* get footer CR/LF */
             c = BT.read();
+#if READ_DEBUG
+            Serial.print(c);
+#endif
             if (c == '\n') {
                 if (cr) {
                     cr    = false;
@@ -104,22 +109,15 @@ int readHC06Msg(void)
                     state = RX_HEADER;
                     data  = NULL;
                     // raise flag up.
-                    if (type == MSG_NONE) {
-                        for (ii = 0; message[ii].command != NULL; ii++) {
-                            if (message[ii].type == MSG_NONE) {
-                                if (strcmp(message[ii].command, buffer) == 0) {
-                                    /* got it */
-                                    SET_BIT(msg_flags, ii);
-                                    break;
-                                }
+                    for (ii = 0; message[ii].command != NULL; ii++) {
+                        if (message[ii].type == MSG_COLON) {
+                            if (strcmp(message[ii].command, buffer) == 0) {
+                                /* got it */
+                                SET_BIT(msg_flags, ii);
+                                break;
                             }
                         }
-                    } else if (type == MSG_COLON) {
-                        SET_BIT(msg_flags, ii);
-                    } else {
-                        // shoud not be here
                     }
-                    type = MSG_NONE;
                 }
             } else {
                 /* error */
@@ -129,10 +127,12 @@ int readHC06Msg(void)
         case RX_ERROR:
             /* error state, flush all data */
             c = BT.read();     // dummy read
+#if READ_DEBUG
+            Serial.print(c);
+#endif
             if (c == '\n') {
                 cr    = false;
                 len   = 0;
-                type  = MSG_NONE;
                 state = RX_HEADER;
                 data  = NULL;
             }
