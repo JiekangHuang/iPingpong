@@ -23,10 +23,8 @@ char R[4];
 char S[4];
 char E[4];
 
-const rx_message_t message[8] = {{"A", 1, MSG_COLON, A}, {"B", 1, MSG_COLON, B},
-                                 {"C", 1, MSG_COLON, C}, {"D", 1, MSG_COLON, D},
-                                 {"R", 1, MSG_COLON, R}, {"S", 1, MSG_COLON, S},
-                                 {"E", 1, MSG_COLON, E}, {NULL, 0, MSG_NONE, NULL}};
+const rx_message_t message[8] = {{"A", 1, MSG_COLON, A}, {"B", 1, MSG_COLON, B}, {"C", 1, MSG_COLON, C}, {"D", 1, MSG_COLON, D},
+                                 {"R", 1, MSG_COLON, R}, {"S", 1, MSG_COLON, S}, {"E", 1, MSG_COLON, E}, {NULL, 0, MSG_NONE, NULL}};
 
 uint8_t iping_state = INIT;
 void    task(void);
