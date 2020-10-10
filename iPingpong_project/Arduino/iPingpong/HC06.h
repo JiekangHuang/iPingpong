@@ -19,15 +19,16 @@ typedef enum
     RXCMD_B,
     RXCMD_C,
     RXCMD_D,
+    RXCMD_E,
+    RXCMD_Q,
     RXCMD_R,
     RXCMD_S,
-    RXCMD_E,
     RXCMD_MAX
 } SIM7020_RXCMD_E;
 
 typedef enum
 {
-    RX_HEADER = 0,
+    RX_HEADER,
     RX_CONTENT,
     RX_DATA,
     RX_FOOTER,
@@ -37,7 +38,7 @@ typedef enum
 
 typedef enum
 {
-    MSG_NONE = 0,
+    MSG_NONE,
     MSG_COLON,
     MSG_MAX
 } RX_MSG_TYPE_E;
@@ -52,6 +53,6 @@ typedef struct {
 int                       readHC06Msg(void);
 int                       initHC06(uint8_t rx_pin, uint8_t tx_pin, uint32_t baudrate);
 
-extern const rx_message_t message[8];
+extern const rx_message_t message[RXCMD_MAX + 1];
 
 #endif

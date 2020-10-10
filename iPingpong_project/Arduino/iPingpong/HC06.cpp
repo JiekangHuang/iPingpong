@@ -1,8 +1,9 @@
 #include "HC06.h"
 #include "config.h"
-#include <SoftwareSerial.h>
+// #include <SoftwareSerial.h>
 
-SoftwareSerial BT(BT_RX, BT_TX);
+// SoftwareSerial BT(BT_RX, BT_TX);
+#define BT Serial
 
 extern uint32_t msg_flags;
 
@@ -11,7 +12,8 @@ extern char               B[4];
 extern char               C[4];
 extern char               D[4];
 extern char               E[4];
-extern char               F[4];
+extern char               R[4];
+extern char               S[4];
 
 int initHC06(uint8_t rx_pin, uint8_t tx_pin, uint32_t baudrate)
 {
@@ -28,7 +30,7 @@ int initHC06(uint8_t rx_pin, uint8_t tx_pin, uint32_t baudrate)
 int readHC06Msg(void)
 {
     static char buffer[32], *data = NULL;
-    static int  len = 0, cr = false, state = RX_HEADER, ii = 0;
+    static int  len = 0, cr = false, type = MSG_NONE, state = RX_HEADER, ii = 0;
     char        c;
 
     if (BT.available()) {
@@ -59,10 +61,13 @@ int readHC06Msg(void)
             Serial.print(buffer[len]);
 #endif
             if (buffer[len] == '\r') {
+                type        = MSG_NONE;
                 cr          = true;
                 buffer[len] = '\0';
                 state       = RX_FOOTER;
-            } else {
+            } else if (buffer[len] == ':') {
+                type        = MSG_COLON;
+                buffer[len] = '\0';
                 for (ii = 0; message[ii].command != NULL; ii++) {
                     if (message[ii].type != MSG_NONE) {
                         if (strcmp(message[ii].command, buffer) == 0) {
@@ -80,6 +85,9 @@ int readHC06Msg(void)
                     state = RX_ERROR;
                 }
                 len = 0;
+            } else {
+                // normal character
+                len++;
             }
             break;
         case RX_DATA:
@@ -109,15 +117,23 @@ int readHC06Msg(void)
                     state = RX_HEADER;
                     data  = NULL;
                     // raise flag up.
-                    for (ii = 0; message[ii].command != NULL; ii++) {
-                        if (message[ii].type == MSG_COLON) {
-                            if (strcmp(message[ii].command, buffer) == 0) {
-                                /* got it */
-                                SET_BIT(msg_flags, ii);
-                                break;
+                    if (type == MSG_NONE) {
+                        // command only (Q)
+                        for (ii = 0; message[ii].command != NULL; ii++) {
+                            if (message[ii].type == MSG_NONE) {
+                                if (strcmp(message[ii].command, buffer) == 0) {
+                                    /* got it */
+                                    SET_BIT(msg_flags, ii);
+                                    break;
+                                }
                             }
                         }
+                    } else if (type == MSG_COLON) {
+                        SET_BIT(msg_flags, ii);
+                    } else {
+                        // shoud not be here
                     }
+                    type = MSG_NONE;
                 }
             } else {
                 /* error */
