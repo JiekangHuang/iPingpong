@@ -5,7 +5,7 @@
 #include <Servo.h>
 #include <Wire.h>
 
-Adafruit_MotorShield AFMS    = Adafruit_MotorShield();
+Adafruit_MotorShield AFMS              = Adafruit_MotorShield();
 Adafruit_DCMotor *   motors[MOTOR_MAX] = {AFMS.getMotor(3), AFMS.getMotor(4)};
 
 Servo servo_up;
@@ -13,7 +13,8 @@ Servo servo_down;
 Servo servo_receive_ball;
 
 uint32_t msg_flags;
-uint8_t ball_mode;
+uint8_t  ball_mode;
+bool     random_move = false;
 
 // FIXME: RENAME
 char A[4];
@@ -24,29 +25,35 @@ char E[4];
 char R[4];
 char S[4];
 
-const rx_message_t message[RXCMD_MAX + 1] = {{"A", 1, MSG_COLON, A}, {"B", 1, MSG_COLON, B}, {"C", 1, MSG_COLON, C}, {"D", 1, MSG_COLON, D},
-                                            {"E", 1, MSG_COLON, E}, {"Q", 1, MSG_NONE, NULL}, {"R", 1, MSG_COLON, R}, {"S", 1, MSG_COLON, S},
-                                            {NULL, 0, MSG_NONE, NULL}};
+const rx_message_t message[RXCMD_MAX + 1] = {
+     {"A", 1, MSG_COLON, A}, {"B", 1, MSG_COLON, B}, {"C", 1, MSG_COLON, C},
+     {"D", 1, MSG_COLON, D}, {"E", 1, MSG_COLON, E}, {"Q", 1, MSG_NONE, NULL},
+     {"R", 1, MSG_COLON, R}, {"S", 1, MSG_COLON, S}, {NULL, 0, MSG_NONE, NULL}};
 
 uint8_t iping_state = INIT;
 void    task(void);
 void    updateBallMode(uint8_t mode);
+void    randomMove(void);
 
 void setup()
 {
 #if DEBUG_MODE
     debugSerial.begin(BAUDRATE_115200);
 #endif
-    initHC06(BT_RX, BT_TX, BAUDRATE_9600);
+    initHC06(BAUDRATE_9600);
     servo_up.attach(10);
     servo_down.attach(9);
     servo_receive_ball.attach(8);
     AFMS.begin();
+    randomSeed(analogRead(A0));
 }
 
 void loop()
 {
     task();
+    if (random_move) {
+        randomMove();
+    }
 }
 
 void task(void)
@@ -108,6 +115,7 @@ void task(void)
             value = atoi(message[RXCMD_R].data);
             DEBUG_PRINT("R = ");
             DEBUG_PRINTLN(value);
+            random_move = (bool)value;
         }
         // 啟動/停止
         if (CHK_BIT(msg_flags, RXCMD_S)) {
@@ -146,16 +154,32 @@ void task(void)
     }
 }
 
-void updateBallMode(uint8_t mode) 
+void updateBallMode(uint8_t mode)
 {
-    if(mode == 1) {
+    if (mode == 1) {
         motors[0]->run(FORWARD);
         motors[1]->run(RELEASE);
-    } else if(mode == 2) {
+    } else if (mode == 2) {
         motors[0]->run(RELEASE);
         motors[1]->run(FORWARD);
-    } else if(mode == 3) {
+    } else if (mode == 3) {
         motors[0]->run(FORWARD);
         motors[1]->run(FORWARD);
+    }
+}
+
+void randomMove(void)
+{
+    static unsigned long timer = 0;
+    static uint16_t      freq  = 0;
+    uint8_t              servo_up_value;
+
+    if (millis() - timer > freq) {
+        timer          = millis();
+        freq           = random(5000, 20000);
+        servo_up_value = random(0, 180);
+        ball_mode      = random(1, 3);
+        servo_up.write(servo_up_value);
+        updateBallMode(ball_mode);
     }
 }

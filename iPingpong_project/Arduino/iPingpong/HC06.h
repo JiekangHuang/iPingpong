@@ -8,8 +8,6 @@
 typedef enum
 {
     ERROR_HC06_NONE,
-    ERROR_HC06_RXTX_PIN,
-    ERROR_HC06_BAUDRATE,
     ERROR_HC06_NO_DATA,
 } ERROR_CODE_E;
 
@@ -50,8 +48,8 @@ typedef struct {
     char *        data;        // 指向 data 的指標
 } rx_message_t;
 
-int                       readHC06Msg(void);
-int                       initHC06(uint8_t rx_pin, uint8_t tx_pin, uint32_t baudrate);
+int readHC06Msg(void);
+int initHC06(uint32_t baudrate);
 
 extern const rx_message_t message[RXCMD_MAX + 1];
 

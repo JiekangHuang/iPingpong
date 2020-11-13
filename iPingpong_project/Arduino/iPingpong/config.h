@@ -15,9 +15,6 @@
 #define BAUDRATE_38400 38400
 #define BAUDRATE_115200 115200
 
-#define BT_RX 2
-#define BT_TX 3
-
 #define SET_BIT(x, n) ((x) |= (1 << (n)))
 #define CLR_BIT(x, n) ((x) &= (~(1 << (n))))
 #define CHK_BIT(x, n) (((x) & (1 << (n))) != 0)
@@ -38,6 +35,6 @@ typedef enum
     IDLE,
     INIT,
     READY,
-} STATE_E; 
+} STATE_E;
 
 #endif

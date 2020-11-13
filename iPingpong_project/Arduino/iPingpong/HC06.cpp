@@ -1,28 +1,20 @@
 #include "HC06.h"
 #include "config.h"
-// #include <SoftwareSerial.h>
 
-// SoftwareSerial BT(BT_RX, BT_TX);
 #define BT Serial
 
 extern uint32_t msg_flags;
 
-extern char               A[4];
-extern char               B[4];
-extern char               C[4];
-extern char               D[4];
-extern char               E[4];
-extern char               R[4];
-extern char               S[4];
+extern char A[4];
+extern char B[4];
+extern char C[4];
+extern char D[4];
+extern char E[4];
+extern char R[4];
+extern char S[4];
 
-int initHC06(uint8_t rx_pin, uint8_t tx_pin, uint32_t baudrate)
+int initHC06(uint32_t baudrate)
 {
-    if (rx_pin < 2 || tx_pin < 2) {
-        return ERROR_HC06_RXTX_PIN;
-    }
-    if (baudrate != BAUDRATE_9600 && baudrate != BAUDRATE_38400 && baudrate != BAUDRATE_115200) {
-        return ERROR_HC06_BAUDRATE;
-    }
     BT.begin(baudrate);
     return ERROR_HC06_NONE;
 }
@@ -43,10 +35,10 @@ int readHC06Msg(void)
             Serial.print(c);
 #endif
             if (c == '\r') {
-                cr    = true;
+                cr = true;
             } else if (c == '\n') {
                 if (cr) {
-                    cr = false;
+                    cr    = false;
                     state = RX_CONTENT;
                 } else {
                     /* error */
