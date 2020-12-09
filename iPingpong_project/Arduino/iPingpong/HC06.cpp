@@ -120,6 +120,10 @@ int readHC06Msg(void)
                                 }
                             }
                         }
+                        if (message[ii].command == NULL) {
+                            // command not found
+                            state = RX_ERROR;
+                        }
                     } else if (type == MSG_COLON) {
                         SET_BIT(msg_flags, ii);
                     } else {

@@ -60,6 +60,8 @@ void task(void)
 {
     readHC06Msg();
     uint8_t value;
+    static unsigned long timer_delay       = 0;
+    static bool          receive_ball_flag = false;
     switch (iping_state) {
     case IDLE:
         break;
@@ -137,11 +139,18 @@ void task(void)
             DEBUG_PRINT("E = ");
             DEBUG_PRINTLN(value);
             if ((bool)value) {
-                servo_receive_ball.write(84);
+                servo_receive_ball.write(97);
+                timer_delay       = millis() + 800;
+                receive_ball_flag = true;
             } else {
                 servo_receive_ball.write(90);
             }
         }
+        if (receive_ball_flag && millis() > timer_delay) {
+            servo_receive_ball.write(85);
+            receive_ball_flag = false;
+        }
+
         // 斷線控制
         if (CHK_BIT(msg_flags, RXCMD_Q)) {
             CLR_BIT(msg_flags, RXCMD_Q);

@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define DEBUG_MODE false
+#define DEBUG_MODE true
 #if DEBUG_MODE
 #define debugSerial Serial
 #define DEBUG_PRINT(x) debugSerial.print(x)
